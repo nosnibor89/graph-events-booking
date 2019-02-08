@@ -1,20 +1,23 @@
+const Event = require("../models/event");
+
 const mockedEvents = [];
 
 const resolver = {
-  events: () => {
-    return mockedEvents;
+  events: async() => {
+    return await Event.find();
   },
-  createEvent: ({ eventInput }) => {
+  createEvent: async ({ eventInput }) => {
     const { title, description, price, date } = eventInput;
-    const event = {
-      id: Math.random().toString(),
+
+    const event = await Event.create({
       title,
       description,
       price,
-      date
-    };
-    mockedEvents.push(event);
+      date: new Date(date),
+    });
 
+    console.log(event);
+    console.log(event._doc);
     return event;
   }
 };
