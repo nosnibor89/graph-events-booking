@@ -18,3 +18,32 @@ mutation {
 #     date
 #   }
 # }
+
+mutation {
+  createUser(userInput: { 
+    email: "myuseremaill", 
+    password: "123", 
+  }) {
+    _id,
+    email,
+  }
+}
+
+ #query {
+ #  users{
+ #    _id,
+ #    email,
+ #  }
+ #}
+
+  query {
+   users{
+     _id,
+     email,
+    events{
+      _id,
+      title,
+      price
+    }
+   }
+ }

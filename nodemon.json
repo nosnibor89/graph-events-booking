@@ -2,6 +2,7 @@
   "env": {
     "MONGO_USER": "Laclave02",
     "MONGO_PASSWORD": "Laclave02",
-    "MONGO_DB": "tests"
+    "MONGO_DB": "tests",
+    "SALT_ROUNDS": 10
   }
 }
