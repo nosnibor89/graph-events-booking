@@ -47,3 +47,43 @@ mutation {
     }
    }
  }
+
+ mutation {
+  bookEvent(eventId: "5c62b58e7b59fc2d8f826c11"){
+    _id,
+    createdAt,
+    updatedAt,
+    user{
+      email
+    },
+    event{
+      title,
+      date,
+      price
+    }
+  }
+}
+
+query {
+  bookings{
+    _id,
+    createdAt,
+    updatedAt,
+    user{
+      email
+    },
+    event{
+      title,
+      createdBy{
+        email
+      }
+    }
+  }
+}
+
+mutation {
+  cancelBooking(bookingId: "5c643ba3bbbdc80eb7f245e4") {
+    _id,
+    title
+  }
+}

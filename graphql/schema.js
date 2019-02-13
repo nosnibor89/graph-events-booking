@@ -31,14 +31,27 @@ input EventInput {
     date: String!
 }
 
+type Booking {
+    _id: ID!
+    event: Event!
+    user: User!
+    createdAt: String!
+    updatedAt: String!
+}
+
 type RootQuery {
     users: [User!]!
     events: [Event!]!
+    
+    bookings: [Booking!]!
 }
 
 type RootMutation {
     createUser(userInput: UserInput): User
     createEvent(eventInput: EventInput): Event
+
+    bookEvent(eventId: ID!): Booking!
+    cancelBooking(bookingId: ID!): Event!
 }
 
 schema {
