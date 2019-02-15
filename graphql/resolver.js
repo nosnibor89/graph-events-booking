@@ -7,6 +7,7 @@ const { dateToString } = require("../helpers/date");
 
 const userId = "5c62b562aca00d2d80b55f20";
 
+// #region Resolver helpers
 const transformCollection = collection =>
   collection.map(item => Object.assign({}, item._doc));
 
@@ -83,6 +84,9 @@ const findEvent = async id => {
   };
 };
 
+// #endregion
+
+//#region Resolvers
 /**
  * App Resolvers
  */
@@ -170,5 +174,7 @@ const resolver = {
     return transformEvent(booking.event._doc);
   }
 };
+
+//#endregion Resolvers
 
 module.exports = resolver;
