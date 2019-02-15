@@ -3,8 +3,49 @@ const bcrypt = require("bcrypt");
 const Event = require("../models/event");
 const User = require("../models/user");
 const Booking = require("../models/booking");
+const { dateToString } = require("../helpers/date");
 
 const userId = "5c62b562aca00d2d80b55f20";
+
+const transformCollection = collection =>
+  collection.map(item => Object.assign({}, item._doc));
+
+const transformEvent = event => {
+  return {
+    ...event,
+    date: dateToString(event.date),
+    createdBy: findUser.bind(this, event.createdBy)
+  };
+};
+
+const transformEvents = events => {
+  const transformedEvents = transformCollection(events);
+  return transformedEvents.map(event => transformEvent(event));
+};
+
+const transformUser = user => {
+  return findUser(user._id);
+};
+
+const transformUsers = users => {
+  const transformedUsers = transformCollection(users);
+  return transformedUsers.map(user => transformUser(user));
+};
+
+const transformBooking = booking => {
+  return {
+    ...booking,
+    user: findUser.bind(this, booking.user),
+    event: findEvent.bind(this, booking.event),
+    createdAt: dateToString(booking.createdAt),
+    updatedAt: dateToString(booking.updatedAt)
+  };
+};
+
+const transformBookings = bookings => {
+  const transformedBookings = transformCollection(bookings);
+  return transformedBookings.map(booking => transformBooking(booking));
+};
 
 /**
  * @param string id
@@ -27,14 +68,7 @@ const findUser = async id => {
  */
 const findEvents = async ids => {
   const events = await Event.find({ _id: { $in: ids } });
-
-  return events.map(async event => {
-    return {
-      ...event._doc,
-      date: new Date(event._doc.date).toISOString(),
-      createdBy: findUser.bind(this, event.createdBy)
-    };
-  });
+  return transformEvents(events);
 };
 
 /**
@@ -49,16 +83,13 @@ const findEvent = async id => {
   };
 };
 
+/**
+ * App Resolvers
+ */
 const resolver = {
   async users() {
     const users = await User.find().select(["_id", "email", "createdEvents"]);
-
-    return users.map(async user => {
-      const currentUser = await findUser(user._id);
-      return {
-        ...currentUser
-      };
-    });
+    return transformUsers(users);
   },
 
   async createUser({ userInput }) {
@@ -82,14 +113,7 @@ const resolver = {
 
   async events() {
     const events = await Event.find();
-
-    return events.map(async event => {
-      return {
-        ...event._doc,
-        date: new Date(event._doc.date).toISOString(),
-        createdBy: findUser.bind(this, event.createdBy)
-      };
-    });
+    return transformEvents(events);
   },
 
   async createEvent({ eventInput }) {
@@ -111,25 +135,12 @@ const resolver = {
     creator.createdEvents.push(event);
     await creator.save();
 
-    return {
-      ...event._doc,
-      date: new Date(event._doc.date).toISOString(),
-      createdBy: findUser.bind(this, creator._id)
-    };
+    return transformEvent(event._doc);
   },
 
   async bookings() {
     const bookings = await Booking.find();
-
-    return bookings.map(booking => {
-      return {
-        ...booking._doc,
-        user: findUser.bind(this, booking._doc.user),
-        event: findEvent.bind(this, booking._doc.event),
-        createdAt: new Date(booking._doc.createdAt).toISOString(),
-        updatedAt: new Date(booking._doc.updatedAt).toISOString()
-      };
-    });
+    return transformBookings(bookings);
   },
 
   async bookEvent({ eventId }) {
@@ -144,13 +155,7 @@ const resolver = {
       event: event.id
     });
 
-    return {
-      ...booking._doc,
-      user: findUser.bind(this, booking._doc.user),
-      event: findEvent.bind(this, booking._doc.event),
-      createdAt: new Date(booking._doc.createdAt).toISOString(),
-      updatedAt: new Date(booking._doc.updatedAt).toISOString()
-    };
+    return transformBooking(booking._doc);
   },
 
   async cancelBooking({ bookingId }) {
@@ -162,11 +167,7 @@ const resolver = {
       throw new Error("No booking found!");
     }
 
-    return {
-      ...booking.event._doc,
-      date: new Date(booking.event._doc.date).toISOString(),
-      createdBy: findUser.bind(this, booking._doc.event._doc.createdBy)
-    };
+    return transformEvent(booking.event._doc);
   }
 };
 
