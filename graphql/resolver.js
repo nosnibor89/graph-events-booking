@@ -1,11 +1,10 @@
 const bcrypt = require("bcrypt");
+const jwt = require('jsonwebtoken');
 
 const Event = require("../models/event");
 const User = require("../models/user");
 const Booking = require("../models/booking");
 const { dateToString } = require("../helpers/date");
-
-const userId = "5c62b562aca00d2d80b55f20";
 
 // #region Resolver helpers
 const transformCollection = collection =>
@@ -91,6 +90,31 @@ const findEvent = async id => {
  * App Resolvers
  */
 const resolver = {
+  async login({ email, password }) {
+    const user = await User.findOne({ email });
+
+    if(!user) {
+      throw Error('Invalid credentials');
+    }
+
+    const match = await bcrypt.compare(password, user._doc.password);
+
+    if (!match) {
+      throw Error('Invalid credentials');
+    }
+
+    const token = jwt.sign({ userId: user.id, email: user.email}, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
+    return {
+      token,
+      userId: user.id,
+      tokenExpiration: 1,
+    };
+
+  },
+
   async users() {
     const users = await User.find().select(["_id", "email", "createdEvents"]);
     return transformUsers(users);
@@ -120,7 +144,12 @@ const resolver = {
     return transformEvents(events);
   },
 
-  async createEvent({ eventInput }) {
+  async createEvent({ eventInput }, { isAuthenticated, userId }) {
+
+    if(!isAuthenticated) {
+      throw new Error("Access denied: Not autheticated");
+    }
+
     const { title, description, price, date } = eventInput;
     const creator = await User.findById(userId).populate("createdEvents");
 
@@ -142,12 +171,20 @@ const resolver = {
     return transformEvent(event._doc);
   },
 
-  async bookings() {
+  async bookings(_, { isAuthenticated }) {
+    if(!isAuthenticated) {
+      throw new Error("Access denied: Not autheticated");
+    }
+
     const bookings = await Booking.find();
     return transformBookings(bookings);
   },
 
-  async bookEvent({ eventId }) {
+  async bookEvent({ eventId }, { isAuthenticated, userId}) {
+    if(!isAuthenticated) {
+      throw new Error("Access denied: Not autheticated");
+    }
+
     const event = await Event.findById(eventId);
 
     if (!event) {
@@ -162,7 +199,12 @@ const resolver = {
     return transformBooking(booking._doc);
   },
 
-  async cancelBooking({ bookingId }) {
+  async cancelBooking({ bookingId }, { isAuthenticated }) {
+
+    if(!isAuthenticated) {
+      throw new Error("Access denied: Not autheticated");
+    }
+
     const booking = await Booking.findByIdAndDelete(bookingId).populate(
       "event"
     );
