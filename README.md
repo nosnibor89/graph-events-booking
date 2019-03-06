@@ -104,3 +104,10 @@
 #   }
 # }
 
+# {
+#       login(email: "${email}", password: "${password}") {
+#         token
+#         tokenExpiration
+#         userId
+#       }
+#     }
