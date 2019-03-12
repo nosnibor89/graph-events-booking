@@ -11,21 +11,54 @@ import AuthPage from "./pages/Auth";
 import EventsPage from "./pages/Events";
 import BookingsPage from "./pages/Bookings";
 import MainNav from "./components/Navigation/MainNav";
+import AuthContext from "./context/auth-context";
 
 class App extends Component {
+
+  state = {
+    token: null,
+    userId: null,
+    isAuthenticated: false,
+  };
+
+  login = ({ token, userId, tokenExpiration }) => {
+    this.setState({ token, userId, isAuthenticated: true });
+  };
+
+  logout = () => {
+    this.setState({ token: null, userId: null, isAuthenticated: false})
+  };
+
   render() {
     return (
       <Router>
         <>
-          <MainNav />
-          <main className="main-content">
-            <Switch>
-              <Redirect from="/" to="/auth" exact />
-              <Route path="/auth" component={AuthPage} />
-              <Route path="/events" component={EventsPage} />
-              <Route path="/bookings" component={BookingsPage} />
-            </Switch>
-          </main>
+          <AuthContext.Provider
+            value={{
+              token: this.state.token,
+              userId: this.state.userId,
+              isAuthenticated: this.state.isAuthenticated,
+              login: this.login,
+              logout: this.logout,
+            }}
+          >
+            <MainNav />
+            <main className="main-content">
+              <Switch>
+                {/* Redirection */}
+                { !this.state.isAuthenticated && <Redirect from="/" to="/auth" exact />}
+                { this.state.isAuthenticated && <Redirect from="/" to="/events" exact />}
+                { this.state.isAuthenticated && <Redirect from="/auth" to="/events" exact />}
+
+                {/* Protected routes */}
+                { !this.state.isAuthenticated && <Route path="/auth" component={AuthPage} />}
+                { this.state.isAuthenticated && <Route path="/bookings" component={BookingsPage} />}
+
+                {/* Public routes */}
+                <Route path="/events" component={EventsPage} />
+              </Switch>
+            </main>
+          </AuthContext.Provider>
         </>
       </Router>
     );
