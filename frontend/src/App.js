@@ -14,11 +14,10 @@ import MainNav from "./components/Navigation/MainNav";
 import AuthContext from "./context/auth-context";
 
 class App extends Component {
-
   state = {
     token: null,
     userId: null,
-    isAuthenticated: false,
+    isAuthenticated: false
   };
 
   login = ({ token, userId, tokenExpiration }) => {
@@ -26,7 +25,7 @@ class App extends Component {
   };
 
   logout = () => {
-    this.setState({ token: null, userId: null, isAuthenticated: false})
+    this.setState({ token: null, userId: null, isAuthenticated: false });
   };
 
   render() {
@@ -39,23 +38,31 @@ class App extends Component {
               userId: this.state.userId,
               isAuthenticated: this.state.isAuthenticated,
               login: this.login,
-              logout: this.logout,
+              logout: this.logout
             }}
           >
             <MainNav />
             <main className="main-content">
               <Switch>
-                {/* Redirection */}
-                { !this.state.isAuthenticated && <Redirect from="/" to="/auth" exact />}
-                { this.state.isAuthenticated && <Redirect from="/" to="/events" exact />}
-                { this.state.isAuthenticated && <Redirect from="/auth" to="/events" exact />}
-
                 {/* Protected routes */}
-                { !this.state.isAuthenticated && <Route path="/auth" component={AuthPage} />}
-                { this.state.isAuthenticated && <Route path="/bookings" component={BookingsPage} />}
+                {!this.state.isAuthenticated && (
+                  <Route path="/auth" component={AuthPage} />
+                )}
+                {this.state.isAuthenticated && (
+                  <Route path="/bookings" component={BookingsPage} />
+                )}
 
                 {/* Public routes */}
                 <Route path="/events" component={EventsPage} />
+
+                {/* Redirection */}
+                {!this.state.isAuthenticated && <Redirect to="/auth" exact />}
+                {this.state.isAuthenticated && (
+                  <Redirect from="/" to="/events" exact />
+                )}
+                {this.state.isAuthenticated && (
+                  <Redirect from="/auth" to="/events" exact />
+                )}
               </Switch>
             </main>
           </AuthContext.Provider>

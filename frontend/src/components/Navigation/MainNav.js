@@ -7,6 +7,7 @@ import AuthContext from "../../context/auth-context";
 const MainNav = () => {
   const authContext = useContext(AuthContext);
   const isAuthenticated = authContext.isAuthenticated;
+  const logoutHandler = authContext.logout
 
   return (
     <header className="main-nav">
@@ -24,9 +25,14 @@ const MainNav = () => {
             <NavLink to="/events">Events</NavLink>
           </li>
           {isAuthenticated && (
-            <li>
-              <NavLink to="/bookings">Bookings</NavLink>
-            </li>
+            <>
+              <li>
+                <NavLink to="/bookings">Bookings</NavLink>
+              </li>
+              <li>
+                <button onClick={logoutHandler}>Logout</button>
+              </li>
+            </>
           )}
         </ul>
       </nav>
