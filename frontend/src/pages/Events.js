@@ -3,11 +3,15 @@ import React, { Component } from "react";
 import "./Events.css";
 import Modal from "../components/Modal/Modal";
 import AuthContext from "../context/auth-context";
+import EventList from "../components/Events/EventList/EventList";
+import Spinner from "../components/Spinner/Spinner";
 
 class EventsPage extends Component {
   state = {
     creating: false,
-    events: []
+    selectedEvent: null,
+    events: [],
+    isLoading: false
   };
 
   static contextType = AuthContext;
@@ -33,8 +37,22 @@ class EventsPage extends Component {
 
   cancelCreateEventHandler = () => {
     this.setState({
-      creating: false
+      creating: false,
+      selectedEvent: null
     });
+  };
+
+  viewEventHandler = eventId => {
+    const event = this.state.events.find(event => event._id === eventId);
+    this.setState({
+      selectedEvent: event
+    });
+  };
+  bookEventHandler = eventId => {
+    // const event = this.state.events.find(event => event._id === eventId);
+    // this.setState({
+    //   selectedEvent: event,
+    // })
   };
 
   createEventHandler = () => {
@@ -45,7 +63,6 @@ class EventsPage extends Component {
       description: this.descriptionElem.current.value
     };
 
-    console.log(event.date)
     const body = {
       query: `
         mutation{
@@ -56,11 +73,17 @@ class EventsPage extends Component {
             date:"${event.date}"}){
             _id,
             title,
+            price,
+            date,
             description
           }
         }
         `
     };
+
+    this.setState({
+      isLoading: true
+    });
 
     fetch("http://localhost:3001/graphql", {
       method: "POST",
@@ -79,7 +102,18 @@ class EventsPage extends Component {
       })
       .then(({ data }) => {
         console.log(data);
-        this.fetchEvents();
+
+        this.setState(prevState => {
+          const newEvent = {
+            ...data.createEvent,
+            createdBy: {
+              _id: this.context.userId
+            }
+          };
+          const newEvents = prevState.events.concat(newEvent);
+          return { events: newEvents, isLoading: false };
+        });
+        // this.fetchEvents();
       })
       .catch(err => console.log("err", err));
 
@@ -107,6 +141,10 @@ class EventsPage extends Component {
         `
     };
 
+    this.setState({
+      isLoading: true
+    });
+
     fetch("http://localhost:3001/graphql", {
       method: "POST",
       body: JSON.stringify(body),
@@ -124,7 +162,8 @@ class EventsPage extends Component {
       .then(({ data }) => {
         if (data.events) {
           this.setState({
-            events: data.events
+            events: data.events,
+            isLoading: false
           });
         }
       })
@@ -148,7 +187,6 @@ class EventsPage extends Component {
 
   renderModal() {
     let modal = null;
-
     if (this.state.creating) {
       modal = (
         <Modal
@@ -157,6 +195,7 @@ class EventsPage extends Component {
           title="Add Event"
           onCancel={this.cancelCreateEventHandler}
           onConfirm={this.createEventHandler}
+          confirmText="Confirm"
         >
           <form>
             <div className="form-control">
@@ -182,16 +221,38 @@ class EventsPage extends Component {
         </Modal>
       );
     }
+
+    if (this.state.selectedEvent) {
+      modal = (
+        <Modal
+          canCancel={true}
+          canConfirm={true}
+          onCancel={this.cancelCreateEventHandler}
+          onConfirm={this.bookEventHandler}
+          title={this.state.selectedEvent.title}
+          confirmText="Book"
+        >
+          <h1>{this.state.selectedEvent.title}</h1>
+          <h2>
+            ${this.state.selectedEvent.price} -{" "}
+            {new Date(this.state.selectedEvent.date).toLocaleDateString()}
+          </h2>
+          <p>{this.state.selectedEvent.description}</p>
+        </Modal>
+      );
+    }
+
     return modal;
   }
 
   renderEvents() {
-    const events = this.state.events.map(event => (
-      <li key={event._id} className="events__list__item">
-        {event.title}
-      </li>
-    ));
-    return <ul className="events__list">{events}</ul>;
+    return (
+      <EventList
+        events={this.state.events}
+        authenticatedUserId={this.context.userId}
+        detailHandler={this.viewEventHandler}
+      />
+    );
   }
 
   render() {
@@ -200,8 +261,8 @@ class EventsPage extends Component {
         {this.renderControls()}
 
         {this.renderModal()}
-
-        {this.renderEvents()}
+        {/* <Spinner /> */}
+        {this.state.isLoading ? <Spinner /> : this.renderEvents()}
       </>
     );
   }
