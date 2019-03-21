@@ -14,6 +14,8 @@ class EventsPage extends Component {
     isLoading: false
   };
 
+  isActive = true;
+
   static contextType = AuthContext;
 
   constructor(props) {
@@ -27,6 +29,10 @@ class EventsPage extends Component {
 
   componentDidMount() {
     this.fetchEvents();
+  }
+
+  componentWillUnmount() {
+    this.isActive = false;
   }
 
   startCreateEventHandler = () => {
@@ -48,11 +54,47 @@ class EventsPage extends Component {
       selectedEvent: event
     });
   };
-  bookEventHandler = eventId => {
-    // const event = this.state.events.find(event => event._id === eventId);
-    // this.setState({
-    //   selectedEvent: event,
-    // })
+  bookEventHandler = () => {
+    const body = {
+      query: `
+        mutation{
+          bookEvent(eventId: "${this.state.selectedEvent._id}"){
+            _id,
+            createdAt,
+            updatedAt
+          }
+        }
+        `
+    };
+
+    this.setState({
+      isLoading: true
+    });
+
+    fetch("http://localhost:3001/graphql", {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.context.token}`
+      }
+    })
+      .then(res => {
+        if (res.status !== 200 && res.status !== 201) {
+          throw new Error("Failed!");
+        }
+
+        return res.json();
+      })
+      .then(({ data }) => {
+        console.log(data);
+        this.setState({
+          isLoading: false,
+          selectedEvent: null,
+          creating: null,
+        });
+      })
+      .catch(err => console.log("err", err));
   };
 
   createEventHandler = () => {
@@ -113,7 +155,6 @@ class EventsPage extends Component {
           const newEvents = prevState.events.concat(newEvent);
           return { events: newEvents, isLoading: false };
         });
-        // this.fetchEvents();
       })
       .catch(err => console.log("err", err));
 
@@ -160,7 +201,7 @@ class EventsPage extends Component {
         return res.json();
       })
       .then(({ data }) => {
-        if (data.events) {
+        if (data.events && this.isActive) {
           this.setState({
             events: data.events,
             isLoading: false
@@ -226,7 +267,7 @@ class EventsPage extends Component {
       modal = (
         <Modal
           canCancel={true}
-          canConfirm={true}
+          canConfirm={this.context.isAuthenticated}
           onCancel={this.cancelCreateEventHandler}
           onConfirm={this.bookEventHandler}
           title={this.state.selectedEvent.title}
