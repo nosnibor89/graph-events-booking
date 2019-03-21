@@ -171,12 +171,12 @@ const resolver = {
     return transformEvent(event._doc);
   },
 
-  async bookings(_, { isAuthenticated }) {
+  async bookings(_, { isAuthenticated, userId }) {
     if(!isAuthenticated) {
       throw new Error("Access denied: Not autheticated");
     }
 
-    const bookings = await Booking.find();
+    const bookings = await Booking.find({user: userId});
     return transformBookings(bookings);
   },
 

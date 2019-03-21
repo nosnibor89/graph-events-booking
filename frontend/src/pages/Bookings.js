@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import AuthContext from "../context/auth-context";
 import Spinner from "../components/Spinner/Spinner";
+import BookingList from "../components/Bookings/BookingList/BookingList";
 
 class BookingsPage extends Component {
   state = {
@@ -18,14 +19,61 @@ class BookingsPage extends Component {
     return (
       <>
         <h1>The Bookings Page</h1>
-        <ul>{this.state.isLoading ? <Spinner/> : this.renderBookings()}</ul>
+        <ul>{this.state.isLoading ? <Spinner /> : this.renderBookings()}</ul>
       </>
     );
   }
 
   renderBookings() {
-    return this.state.bookings.map(booking => <li key={booking._id}>{booking.event.title} - {new Date(booking.createdAt).toLocaleDateString()}</li>);
+    return (
+      <BookingList
+        bookings={this.state.bookings}
+        onDelete={this.cancelBookingHandler}
+      />
+    );
   }
+
+  cancelBookingHandler = bookingId => {
+    const body = {
+      query: ` mutation {
+      cancelBooking(bookingId: "${bookingId}") {
+        _id,
+        title
+      }
+    }
+    `
+    };
+
+    fetch("http://localhost:3001/graphql", {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.context.token}`
+      }
+    })
+      .then(res => {
+        if (res.status !== 200 && res.status !== 201) {
+          throw new Error("Failed!");
+        }
+
+        return res.json();
+      })
+      .then(({ data }) => {
+        console.log(data);
+
+        this.setState(prevState => {
+          const bookings = prevState.bookings.filter(
+            booking => booking._id !== bookingId
+          );
+
+          return {
+            bookings
+          };
+        });
+      })
+      .catch(err => console.log("err", err));
+  };
 
   fetchBookings() {
     const body = {
