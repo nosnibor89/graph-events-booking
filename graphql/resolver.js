@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
+const DataLoader = require('dataloader');
 
 const Event = require("../models/event");
 const User = require("../models/user");
@@ -28,8 +29,7 @@ const transformUser = user => {
 };
 
 const transformUsers = users => {
-  const transformedUsers = transformCollection(users);
-  return transformedUsers.map(user => transformUser(user));
+  return transformCollection(users);
 };
 
 const transformBooking = booking => {
@@ -47,19 +47,20 @@ const transformBookings = bookings => {
   return transformedBookings.map(booking => transformBooking(booking));
 };
 
+const findUsers = async ids => {
+  const users = await User.find({ _id: { $in: ids } }).select(["_id", "email", "createdEvents"]);
+  return transformUsers(users);
+}
+
 /**
  * @param string id
  */
 const findUser = async id => {
-  const user = await User.findById(id).select([
-    "_id",
-    "email",
-    "createdEvents"
-  ]);
-
+  const user = await userLoader.load(String(id));
+  
   return {
-    ...user._doc,
-    createdEvents: findEvents.bind(this, user._doc.createdEvents)
+    ...user,
+    createdEvents: eventLoader.loadMany.bind(this, user.createdEvents)
   };
 };
 
@@ -67,7 +68,7 @@ const findUser = async id => {
  * @param array ids
  */
 const findEvents = async ids => {
-  const events = await Event.find({ _id: { $in: ids } });
+  let events = await Event.find({ _id: { $in: ids } });
   return transformEvents(events);
 };
 
@@ -75,13 +76,17 @@ const findEvents = async ids => {
  * @param string id
  */
 const findEvent = async id => {
-  const event = await Event.findById(id);
+  const event = await eventLoader.load(String(id));
   return {
-    ...event._doc,
-    date: new Date(event._doc.date).toISOString(),
-    createdBy: findUser.bind(this, event._doc.createdBy)
+    ...event,
+    date: new Date(event.date).toISOString(),
+    createdBy: findUser.bind(this, event.createdBy)
   };
 };
+
+const eventLoader = new DataLoader(eventIds => findEvents(eventIds));
+
+const userLoader = new DataLoader(userIds => findUsers(userIds));
 
 // #endregion
 
