@@ -35,13 +35,17 @@ class BookingsPage extends Component {
 
   cancelBookingHandler = bookingId => {
     const body = {
-      query: ` mutation {
-      cancelBooking(bookingId: "${bookingId}") {
-        _id,
-        title
+      query: ` 
+      mutation CancelBooking($id: ID!){
+        cancelBooking(bookingId: $id) {
+          _id,
+          title
+        }
       }
-    }
-    `
+      `,
+      variables: {
+        id: bookingId
+      }
     };
 
     fetch("http://localhost:3001/graphql", {
@@ -110,7 +114,6 @@ class BookingsPage extends Component {
         return res.json();
       })
       .then(({ data }) => {
-        console.log(data);
         if (data.bookings) {
           this.setState({
             bookings: data.bookings,

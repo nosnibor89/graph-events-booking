@@ -57,14 +57,17 @@ class EventsPage extends Component {
   bookEventHandler = () => {
     const body = {
       query: `
-        mutation{
-          bookEvent(eventId: "${this.state.selectedEvent._id}"){
+        mutation BookEvent($eventId: ID!){
+          bookEvent(eventId: $eventId){
             _id,
             createdAt,
             updatedAt
           }
         }
-        `
+        `,
+      variables: {
+        eventId: this.state.selectedEvent._id
+      }
     };
 
     this.setState({
@@ -91,7 +94,7 @@ class EventsPage extends Component {
         this.setState({
           isLoading: false,
           selectedEvent: null,
-          creating: null,
+          creating: null
         });
       })
       .catch(err => console.log("err", err));
@@ -107,12 +110,12 @@ class EventsPage extends Component {
 
     const body = {
       query: `
-        mutation{
+        mutation CreateEvent($title: String!, $price: Float!, $desc: String!, $date: String!){
           createEvent(eventInput: {
-            title: "${event.title}", 
-            price:${event.price}, 
-            description: "${event.description}", 
-            date:"${event.date}"}){
+            title: $title, 
+            price: $price, 
+            description: $desc, 
+            date: $date}){
             _id,
             title,
             price,
@@ -120,7 +123,11 @@ class EventsPage extends Component {
             description
           }
         }
-        `
+        `,
+      variables: {
+        ...event, // Event has almost the same property names as variables.
+        desc: event.description
+      }
     };
 
     this.setState({

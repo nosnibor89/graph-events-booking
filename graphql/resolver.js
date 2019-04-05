@@ -24,10 +24,6 @@ const transformEvents = events => {
   return transformedEvents.map(event => transformEvent(event));
 };
 
-const transformUser = user => {
-  return findUser(user._id);
-};
-
 const transformUsers = users => {
   return transformCollection(users);
 };
@@ -57,10 +53,10 @@ const findUsers = async ids => {
  */
 const findUser = async id => {
   const user = await userLoader.load(String(id));
-  
+  const createdEvents = user.createdEvents.map(event => String(event));
   return {
     ...user,
-    createdEvents: eventLoader.loadMany.bind(this, user.createdEvents)
+    createdEvents: () => eventLoader.loadMany(createdEvents),
   };
 };
 
@@ -68,7 +64,7 @@ const findUser = async id => {
  * @param array ids
  */
 const findEvents = async ids => {
-  let events = await Event.find({ _id: { $in: ids } });
+  const events = await Event.find({ _id: { $in: ids } });
   return transformEvents(events);
 };
 
