@@ -8,6 +8,7 @@ const BookingList = ({ bookings, onDelete }) => (
       <li key={booking._id} className="bookings__item">
         <div className="bookings__item-data">
           {booking.event.title} -{" "}
+          {booking.event.price} -{" "}
           {new Date(booking.createdAt).toLocaleDateString()}
         </div>
         <div className="bookings__item-actions">

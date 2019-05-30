@@ -26,8 +26,10 @@ class AuthPage extends Component {
   loginHandler = event => {
     event.preventDefault();
     const { isLogin } = this.state;
-    const email = this.emailEl.current.value;
-    const password = this.passEl.current.value;
+    // const email = this.emailEl.current.value;
+    // const password = this.passEl.current.value;
+    const email = 'nosnibor1989@gmail.com';
+    const password = 'R0ma1989.';
 
     if (email.trim().length === 0 || password.trim().length === 0) {
       return;

@@ -2,11 +2,14 @@ import React, { Component } from "react";
 import AuthContext from "../context/auth-context";
 import Spinner from "../components/Spinner/Spinner";
 import BookingList from "../components/Bookings/BookingList/BookingList";
+import BookingsChart from "../components/Bookings/BookingsChart/BookingsChart";
+import BookingsControls from "../components/Bookings/BookingsControls/BookingsControls";
 
 class BookingsPage extends Component {
   state = {
     isLoading: false,
-    bookings: []
+    bookings: [],
+    tab: "list"
   };
 
   static contextType = AuthContext;
@@ -16,22 +19,45 @@ class BookingsPage extends Component {
   }
 
   render() {
+    const content = this.state.isLoading ? <Spinner /> : this.renderBookings();
+
     return (
       <>
         <h1>The Bookings Page</h1>
-        <ul>{this.state.isLoading ? <Spinner /> : this.renderBookings()}</ul>
+        <ul>{content}</ul>
       </>
     );
   }
 
   renderBookings() {
+    const content =
+      this.state.tab !== "chart" ? (
+        <BookingList
+          bookings={this.state.bookings}
+          onDelete={this.cancelBookingHandler}
+        />
+      ) : (
+        <BookingsChart bookings={this.state.bookings} />
+      );
+
     return (
-      <BookingList
-        bookings={this.state.bookings}
-        onDelete={this.cancelBookingHandler}
-      />
+      <>
+        <BookingsControls
+          showList={() => this.changeTabHandler("list")}
+          showTabs={() => this.changeTabHandler("chart")}
+          activeType={this.state.tab}
+        />
+
+        <div>{content}</div>
+      </>
     );
   }
+
+  changeTabHandler = tabType => {
+    this.setState({
+      tab: tabType
+    });
+  };
 
   cancelBookingHandler = bookingId => {
     const body = {
@@ -87,7 +113,8 @@ class BookingsPage extends Component {
               createdAt,
               updatedAt,
               event {
-                title
+                title,
+                price
               }
             }
           }
