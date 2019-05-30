@@ -1,10 +1,28 @@
 import React, { Component } from "react";
+import { gql } from 'apollo-boost';
 
 import "./Events.css";
 import Modal from "../components/Modal/Modal";
 import AuthContext from "../context/auth-context";
 import EventList from "../components/Events/EventList/EventList";
 import Spinner from "../components/Spinner/Spinner";
+import { Query } from "react-apollo";
+
+const EVENTS_QUERY = gql`
+{
+  events{
+    _id,
+    title, 
+    price, 
+    description, 
+    date,
+    createdBy {
+      _id,
+      email
+    }
+  }
+}
+`;
 
 class EventsPage extends Component {
   state = {
@@ -25,10 +43,6 @@ class EventsPage extends Component {
     this.priceElem = React.createRef();
     this.dateElem = React.createRef();
     this.descriptionElem = React.createRef();
-  }
-
-  componentDidMount() {
-    this.fetchEvents();
   }
 
   componentWillUnmount() {
@@ -170,54 +184,6 @@ class EventsPage extends Component {
     });
   };
 
-  fetchEvents() {
-    const body = {
-      query: `
-        query{
-          events{
-            _id,
-            title, 
-            price, 
-            description, 
-            date,
-            createdBy {
-              _id,
-              email
-            }
-          }
-        }
-        `
-    };
-
-    this.setState({
-      isLoading: true
-    });
-
-    fetch("http://localhost:3001/graphql", {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
-      .then(res => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Failed!");
-        }
-
-        return res.json();
-      })
-      .then(({ data }) => {
-        if (data.events && this.isActive) {
-          this.setState({
-            events: data.events,
-            isLoading: false
-          });
-        }
-      })
-      .catch(err => console.log("err", err));
-  }
-
   renderControls() {
     let controls = null;
     if (this.context.isAuthenticated) {
@@ -293,24 +259,30 @@ class EventsPage extends Component {
     return modal;
   }
 
-  renderEvents() {
-    return (
-      <EventList
-        events={this.state.events}
-        authenticatedUserId={this.context.userId}
-        detailHandler={this.viewEventHandler}
-      />
-    );
-  }
-
   render() {
     return (
       <>
         {this.renderControls()}
 
         {this.renderModal()}
-        {/* <Spinner /> */}
-        {this.state.isLoading ? <Spinner /> : this.renderEvents()}
+
+        <Query query={EVENTS_QUERY}>
+          {({ loading, data, error }) => {
+            if (loading) return <Spinner />;
+
+            if (error) {
+              console.log(error);
+              return <p>Error loading events:(</p>;
+            }
+
+            return (<EventList
+              events={data.events}
+              authenticatedUserId={this.context.userId}
+              detailHandler={this.viewEventHandler}
+            />)
+
+          }}
+        </Query>
       </>
     );
   }
