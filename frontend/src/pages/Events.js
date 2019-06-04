@@ -1,12 +1,12 @@
 import React, { Component } from "react";
 import { gql } from 'apollo-boost';
+import { Query, withApollo } from "react-apollo";
 
 import "./Events.css";
 import Modal from "../components/Modal/Modal";
 import AuthContext from "../context/auth-context";
 import EventList from "../components/Events/EventList/EventList";
 import Spinner from "../components/Spinner/Spinner";
-import { Query } from "react-apollo";
 
 const EVENTS_QUERY = gql`
 {
@@ -62,8 +62,13 @@ class EventsPage extends Component {
     });
   };
 
-  viewEventHandler = eventId => {
-    const event = this.state.events.find(event => event._id === eventId);
+  viewEventHandler = async eventId => {
+    const { client } = this.props;
+    const { data: { events } } = await client.query({
+      query: EVENTS_QUERY,
+    });
+    
+    const event = events.find(event => event._id === eventId);
     this.setState({
       selectedEvent: event
     });
@@ -288,4 +293,4 @@ class EventsPage extends Component {
   }
 }
 
-export default EventsPage;
+export default withApollo(EventsPage);
